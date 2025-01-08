@@ -10,12 +10,16 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
             email TEXT UNIQUE,
-            password TEXT,
             regd_no VARCHAR(20),
-            year_of_study INTEGER,
             branch TEXT,
             student_type TEXT,
-            student_image BLOB
+            course TEXT,
+            college_name TEXT,
+            student_image BLOB,
+            year_of_study INTEGER,
+            mobile_no VARCHAR(15),
+            password TEXT
+
         )
     """)
     cursor.execute("""
@@ -29,7 +33,7 @@ def init_db():
     conn.close()
 
 # Register a new user
-def register_user(name, email, password, regd_no, year_of_study, branch, student_type, student_image):
+def register_user(name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, password):
     conn = sqlite3.connect("users.db")
     cursor = conn.cursor()
     try:
@@ -38,9 +42,9 @@ def register_user(name, email, password, regd_no, year_of_study, branch, student
             student_image = student_image.read()
 
         cursor.execute("""
-            INSERT INTO users (name, email, password, regd_no, year_of_study, branch, student_type, student_image) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (name, email, password, regd_no, year_of_study, branch, student_type, student_image))
+            INSERT INTO users (name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, password) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?)
+        """, (name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, password))
         conn.commit()
         return True
     except sqlite3.IntegrityError:

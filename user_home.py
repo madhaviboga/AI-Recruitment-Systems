@@ -115,9 +115,16 @@ def user_profile():
     
     if user_data:
         # Assuming 'user' is a tuple (id, name, email, password, regd_no, year_of_study, branch, student_type, student_image)
-        name, regd_no, year_of_study, branch, student_type, student_image = user_data[1], user_data[4], user_data[5], user_data[6], user_data[7], user_data[8]
-
-        # Check if the student_image is a bytes-like object
+        name=user_data[1]
+        mail=user_data[2]
+        regd_no=user_data[3]
+        branch=user_data[4]
+        student_type=user_data[5]
+        course=user_data[6]
+        college_name=user_data[7]
+        student_image=user_data[8]
+        year_of_study=user_data[9]
+        mobile_no=user_data[10]
         if isinstance(student_image, bytes):
             # Encode the binary image to base64
             image_data = base64.b64encode(student_image).decode()
@@ -154,10 +161,10 @@ def user_profile():
                 flex: 1;
             }
             .profile-header {
-                font-size: 24px;
+                font-size: 50px;
                 font-weight: bold;
                 margin-bottom: 15px;
-                color: #333;
+                color: maroon;
             }
             .profile-item {
                 font-size: 18px;
@@ -167,12 +174,25 @@ def user_profile():
             .profile-image {
                 flex-shrink: 0;
                 margin-left: 40px;
+                margin-bottom: 250px;
             }
             .profile-image img {
-                border-radius: 50%;
+                border-radius: 0%;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.8);
                 max-width: 300px;
                 max-height: 300px;
             }
+            .profile-item {
+                margin: 10px 0;
+                font-size: 16px;
+            }
+            .profile-item strong {
+                color: red; /* Label color */
+            }
+            .profile-item {
+                color: black; /* Value color */
+            }
+
         </style>
         """
 
@@ -186,6 +206,10 @@ def user_profile():
                 <div class="profile-item"><strong>Year of Study:</strong> {year_of_study}</div>
                 <div class="profile-item"><strong>Branch:</strong> {branch}</div>
                 <div class="profile-item"><strong>Student Type:</strong> {student_type}</div>
+                <div class="profile-item"><strong>Course:</strong> {course}</div>
+                <div class="profile-item"><strong>College Name:</strong> {college_name}</div>
+                <div class="profile-item"><strong>Email:</strong> {mail}</div>
+                <div class="profile-item"><strong>Mobile Number:</strong> {mobile_no}</div>
             </div>
             <div class="profile-image">
                 <img src="{image_link}" alt="User Image">
@@ -205,10 +229,12 @@ def placement():
     <style>
     /* Apply background image to the main content area */
     .main {
-        background-image: url('https://t3.ftcdn.net/jpg/05/00/34/58/360_F_500345899_4OqmtspFst6SRnNQvLj7h7TfKOrBwTer.jpg');
+        background-image: url('https://png.pngtree.com/background/20230112/original/pngtree-original-hand-painted-ink-and-watercolor-pure-color-light-colored-paper-picture-image_1999891.jpg');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
+        background-color: rgba(255, 255, 255, 0.1); /* Add a semi-transparent overlay */
+        background-blend-mode: overlay; /* Blend the image with the overlay */
     }
     </style>
     """,
@@ -238,25 +264,27 @@ def placement():
         return clf
 
     sta = 0
-    gender = {'M': 1, 'F': 0}
-    boards_ten = {'Central': 0, 'Others': 1}
-    boards_twl = {'Central': 0, 'Others': 1}
-    twl_spl = {'Others': 0, 'Comm': 1, 'Sci': 2}
-    ug_spl = {'Others': 1, 'Comm': 0, 'Sci': 2}
+    gender = {'Male': 1, 'Female': 0,'Others':0}
+    boards_ten = {'Central': 0, 'Others': 1,'State':1}
+    boards_twl = {'Central': 0, 'Others': 1,'State':1}
+    twl_spl = {'Others': 0, 'HPC': 1, 'MPC': 2,'BIPC':2}
     work_ex = {'Yes': 1, 'No': 0}
-    pg_spl = {"Mkt/hr": 1, "Mkt/fin": 0}
     #take inputs in 2 columns
     st.markdown('<div style="display: flex; flex-direction: row;">', unsafe_allow_html=True)
     st.markdown(
     """
     <style>
     .stButton button {
-        background-color: blue; /* Set button color to blue */
+        background-color: red; /* Set button color to blue */
         color: white;          /* Set text color to white */
-        border-radius: 5px;    /* Optional: Add rounded corners */
-        padding: 8px 16px;     /* Optional: Adjust padding */
-        border: none;          /* Remove border */
+        border-radius: 19px;    /* Optional: Add rounded corners */
+        padding: 10px 28px;     /* Optional: Adjust padding */
+        border: 2px solid black;          /* Remove border */
         cursor: pointer;       /* Add pointer on hover */
+    }
+     div.stButton {
+        display: flex;
+        justify-content: center;
     }
     </style>
     """,
@@ -269,36 +297,30 @@ def placement():
 
         # Take inputs from the user
         g = cols[0].radio(
-            "Select your Gender ", ('M', 'F'), horizontal=True)
-        age = 20
-        year_of_study = 2  # Example year of study
-        p_ten = cols[1].slider("Your 10th Boards Percentage", 0, 100)
+            "Select your Gender ", ('Male', 'Female','Others'), horizontal=True)
+        age = 22
+        year_of_study = user_data[9]
+        p_ten = cols[1].number_input("Your 10th Percentage", 0, 100, 35)
 
         b_ten = cols[0].radio(
-            "Select your 10th board ", ('Central', 'Others'), horizontal=True)
+            "Select your 10th board ", ('State','Central', 'Others'), horizontal=True)
 
-        p_twl = cols[1].slider("Your 12th Boards Percentage", 0, 100)
+        p_twl = cols[1].number_input("Your 12th/Diploma Percentage", 0, 100, 35)
 
         b_twl = cols[0].radio(
-            "Select your 12th board ", ('Central', 'Others'), horizontal=True)
+            "Select your 12th/Diploma Board", ('State','Central', 'Others'), horizontal=True)
 
         s_twl = cols[0].radio(
-            "Select your class 12th stream", ('Sci', 'Comm', 'Others'), horizontal=True)
+            "Select your class 12th stream", ('MPC','BIPC', 'HPC', 'Others'), horizontal=True)
 
-        p_ug = cols[1].slider("Your UG Degree Percentage", 0, 100)
+        p_ug = cols[1].number_input("Your UG Degree Percentage",0,100,35)
 
-        s_ug = cols[0].radio(
-            "Select your UG Degree ", ('Sci', 'Comm', 'Others'), horizontal=True)
-
+        s_ug = 1
+        p_et=0
+        s_pg=0
         wk = cols[0].radio(
             "Do you have previous work experience?", ('Yes', 'No'), horizontal=True)
-
-        p_et = cols[1].slider("Your Percentage in Employability test", 0, 100)
-
-        s_pg = cols[0].radio(
-            "Select your MBA specialization ", ("Mkt/hr", "Mkt/fin"), horizontal=True)
-
-        p_pg = cols[1].slider("Your PG Degree Percentage", 0, 100)
+        p_pg = cols[1].number_input("Your PG Degree Percentage",0,100,35)
         
         skills = st.multiselect("Select your skills", [
             'Python', 'C', 'Java', 'C++', 'C#', 'R', 'Javascript', 'Data Base', 'SQL', 'NOSQL',
@@ -313,17 +335,16 @@ def placement():
         st.markdown('<div class="center-button">', unsafe_allow_html=True)
         submitted = st.form_submit_button("Submit")
         st.markdown('</div>', unsafe_allow_html=True)
-
     if submitted:
         sta = 1
         if sta:
             x = model()
             Y_pred = x.predict([[gender[g], p_ten, boards_ten[b_ten], p_twl,
-                                boards_twl[b_twl], twl_spl[s_twl], p_ug, ug_spl[s_ug],
-                                work_ex[wk], p_et, pg_spl[s_pg], p_pg]])
+                                boards_twl[b_twl], twl_spl[s_twl], p_ug, s_ug,
+                                work_ex[wk], p_et, s_pg, p_pg]])
             if Y_pred[0]:
                 st.success("Congrats!! 👏🏻 you are eligible to be placed!!")
-                if len(skills)<1:
+                if len(skills) is None:
                     st.write("<p style='color: red;'>You need to improve your skills!</p>", unsafe_allow_html=True)          
 
             else:

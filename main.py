@@ -21,20 +21,6 @@ if "page" not in st.session_state:
 
 if st.session_state["page"] == "Home":
     # Horizontal navigation for non-logged-in users
-    st.markdown(
-    """
-    <style>
-    /* Apply background image to the main content area */
-    .main {
-        background-image: url('https://img.freepik.com/premium-vector/abstract-background-geometric-blue-green-wave-effect-with-memphis-background_586360-2484.jpg?semt=ais_hybrid');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-    )
     selected_page = option_menu(
         menu_title=None,
         options=["Home", "Login", "Register"],

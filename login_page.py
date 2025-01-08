@@ -3,7 +3,22 @@ from db_manager import validate_user
 
 def login_page():
     # Center the login form using Streamlit form layout
-    with st.form(key="login_form"):
+    st.markdown(
+    """
+    <style>
+    /* Apply background image to the main content area */
+    .main {
+        background-image: url('https://img.freepik.com/free-photo/top-view-books-with-copy-space_23-2148827187.jpg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+    )
+    col1,col2,col3=st.columns([4,2,10])
+    with col3.form(key="login_form"):
         # Title
         st.title("Login Page")
 

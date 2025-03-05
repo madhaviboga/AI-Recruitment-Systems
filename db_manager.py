@@ -17,23 +17,17 @@ def init_db():
             college_name TEXT,
             student_image BLOB,
             year_of_study INTEGER,
-            mobile_no VARCHAR(15),
+            mobile_no VARCHAR(10),
+            otp INTEGER,
             password TEXT
 
-        )
-    """)
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS otp_data (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT,
-            otp INTEGER
         )
     """)
     conn.commit()
     conn.close()
 
 # Register a new user
-def register_user(name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, password):
+def register_user(name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, otp,password):
     conn = sqlite3.connect("users.db")
     cursor = conn.cursor()
     try:
@@ -42,9 +36,9 @@ def register_user(name, email, regd_no, branch, student_type, course, college_na
             student_image = student_image.read()
 
         cursor.execute("""
-            INSERT INTO users (name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, password) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?)
-        """, (name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, password))
+            INSERT INTO users (name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no,otp, password) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?,?)
+        """, (name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no,otp, password))
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -69,3 +63,32 @@ def valid_user(email):
     user = cursor.fetchone()
     conn.close()
     return user
+
+def fetch_otp(email):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT otp FROM users WHERE email = ?", (email,))
+    otp = cursor.fetchone()
+    conn.close()
+    return otp
+
+def update_otp(email,otp):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET otp = ? WHERE email = ?", (otp,email))
+    conn.commit()
+    conn.close()
+
+def change_password(email,password):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET password = ? WHERE email = ?", (password,email))
+    conn.commit()
+    conn.close()
+def fetch_password(email):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT password FROM users WHERE email = ?", (email,))
+    password = cursor.fetchone()
+    conn.close()
+    return password

@@ -5,9 +5,12 @@ from streamlit_option_menu import option_menu
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 import base64
+from Resume_scanner import compare
 import seaborn as sns
 from matplotlib import pyplot as plt
 import pdfplumber
+import requests
+from bs4 import BeautifulSoup
 import base64
 import PyPDF2
 import re
@@ -94,6 +97,58 @@ def calculate_scores(content):
 
     scores = {domain: sum(1 for word in terms if word in content) for domain, terms in Area_with_key_term.items()}
     return pd.DataFrame(list(scores.items()), columns=['Domain/Area', 'Score']).sort_values(by='Score', ascending=False)
+def search_and_display_images(query, num_images=20):
+    try:
+        # Initialize an empty list for image URLs
+        k=[]  
+        # Initialize an index for iterating through the list of images
+        idx=0  
+        # Construct Google Images search URL
+        url = f"https://www.google.com/search?q={query}&tbm=isch"  
+         # Make an HTTP request to the URL
+        response = requests.get(url) 
+        # Parse the HTML content with BeautifulSoup
+        soup = BeautifulSoup(response.text, "html.parser")  
+        # Initialize an empty list for storing image URLs
+        images = []  
+        # Iterate through image tags in the HTML content
+        for img in soup.find_all("img"):  
+             # Limit the number of images to the specified amount
+            if len(images) == num_images: 
+                break
+            # Get the image source URL
+            src = img.get("src")  
+            # Check if the source URL is valid
+            if src.startswith("http") and not src.endswith("gif"):  
+                # Add the image URL to the list
+                images.append(src)  
+        # Iterate through the list of image URLs
+        for image in images:  
+            # Add each image URL to the list 'k'
+            k.append(image)  
+        # Reset the index for iterating through the list of image URLs
+        idx = 0  
+        # Iterate through the list of image URLs
+        while idx < len(k):
+            # Iterate through the columns in a 4-column layout 
+            for _ in range(len(k)): 
+                # Create 4 columns for displaying images 
+                cols = st.columns(3)  
+                # Display the first image in the first column
+                cols[0].image(k[idx], width=200)  
+                idx += 1 
+                # Move to the next image in the list
+                cols[1].image(k[idx], width=200)
+                # Display the second image in the second column
+                idx += 1  
+                # Move to the next image in the list
+                cols[2].image(k[idx], width=200)  
+                # Display the third image in the third column
+                idx += 1  
+    except:
+         # Handle exceptions gracefully if there is an error while displaying images
+        pass  
+
 user_data = st.session_state.get('user', None)
 def user_profile():
     st.markdown(
@@ -101,7 +156,7 @@ def user_profile():
     <style>
     /* Apply background image to the main content area */
     .main {
-        background-image: url('https://img.freepik.com/free-vector/geometric-science-education-background-vector-gradient-blue-digital-remix_53876-125993.jpg');
+        background-image: url('https://media.licdn.com/dms/image/v2/D5610AQF24eAPK2ylIQ/image-shrink_800/image-shrink_800/0/1733809912502?e=2147483647&v=beta&t=xV5UA7sATdv8mGN3K0SuFvhctuQSoXEEF_J9PvvNwdM');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -349,8 +404,7 @@ def placement():
 
             else:
                 st.error("Sorry!! you are not eligible to be placed!!")
-                #needs to improve the skills based on the scores
-                
+                #needs to improve the skills based on the scores         
 
 def resume():
     st.markdown(
@@ -498,13 +552,262 @@ def resume():
     
         else:
             st.write("Resume Does Not Meet The Requirement for any Role.")
+def candidate_matching():
+    st.markdown(
+    """
+    <style>
+    /* Apply background image to the main content area */
+    .main {
+        background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT5w5dx9JVCCoanCogCi0jdf0zy5PsHLdseKw&s');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+    )
+    st.markdown(
+    """
+    <h1 style='text-align: center; font-size: 50px;'>
+        <span style='color: red;'>Skill Based Matching</span>
+    </h1>
+    """,
+    unsafe_allow_html=True
+    )
+    flag = 'HuggingFace-BERT'
+    uploaded_files = st.file_uploader(
+        '**Upload your Resume File:** ', type="pdf", accept_multiple_files=True)
+    JD = st.text_area("**Enter Job Description:**")
+    col1,col2,col3 = st.columns([2,1,2])
+    comp_pressed = col2.button("Get Score",type='primary')
+    if comp_pressed and uploaded_files:
+        # Streamlit file_uploader gives file-like objects, not paths
+        uploaded_file_paths = [extract_pdf_data(
+            file) for file in uploaded_files]
+        score = compare(uploaded_file_paths, JD, flag)
+    my_dict = {}
+    if comp_pressed and uploaded_files:
+        for i in range(len(score)):
+            # Populate the dictionary with file names and corresponding scores
+            my_dict[uploaded_files[i].name] = score[i]
+        
+        # Sort the dictionary by keys
+        sorted_dict = dict(sorted(my_dict.items()))
+        
+        # Convert the sorted dictionary to a list of tuples
+        ct_items = list(sorted_dict.items())
+        score = ct_items[0][1]  # Access the score of the first file
+        sc=float(score)
+        if sc >= 75:
+            #print scrore
+            sc=round(sc,2)
+            st.markdown(f'<p style="text-align: center; font-size: 30px;"><span style="color: green;">Score {sc}%.</span></h1>', unsafe_allow_html=True)
+
+            st.markdown(
+                f"""
+                <h1 style='text-align: center; font-size: 50px;'>
+                    <span style='color: green;'>The Candiate is good match for the Job.</span>
+                </h1>
+                """,
+                unsafe_allow_html=True
+            )
+            st.image("https://media.istockphoto.com/id/1385218939/vector/people-crowd-applause-hands-clapping-business-teamwork-cheering-ovation-delight-vector.jpg?s=612x612&w=0&k=20&c=7NMaUB4zGoXoePxiy-XxKap53GMBQvmIYOSW1tVSFMY=", use_column_width=True)
+            st.balloons()
+        elif sc >= 50:
+            st.markdown(f'<p style="text-align: center; font-size: 30px;"><span style="color: green;">Score {sc}%.</span></h1>', unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <h1 style='text-align: center; font-size: 50px;'>
+                    <span style='color: orange;'>The Candiate is moderate match for the Job.</span>
+                </h1>
+                """,
+                unsafe_allow_html=True
+            )
+            # place horizontal line
+            st.markdown(
+                """
+                <hr style='border: 1px solid green;'>
+                """,
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                """
+                <p style='text-align: center; font-size: 30px; font-family: Garamond, sans-serif;'>
+                    <span style='color: purple;'>Improvements</span>
+                </p>
+                """,
+                unsafe_allow_html=True
+            )
+            #parse Job Description and Extract the skills
+            JD = preprocess_text(JD)
+            scored_df = calculate_scores(JD)
+            high_scores_df = scored_df[scored_df['Score'] > 1]
+            if not high_scores_df.empty:
+                #make a list of skills
+                data = pd.read_csv('image.csv')
+                # Number of columns per row
+                columns_per_row = 3
+                # Count the total number of rows needed
+                total_items = len(high_scores_df)
+                total_rows = -(-total_items // columns_per_row)  # Ceiling division
+
+                for row_index in range(total_rows):
+                    # Create a new row of columns
+                    cols = st.columns(columns_per_row)
+                    
+                    # Iterate through the items in this row
+                    for col_index in range(columns_per_row):
+                        # Calculate the actual index in the dataframe
+                        item_index = row_index * columns_per_row + col_index
+                        
+                        # Check if the index is valid
+                        if item_index < total_items:
+                            # Get the row data
+                            row = high_scores_df.iloc[item_index]
+                            skill_name = row['Domain/Area']
+                            img = data[data['Skill'] == str(skill_name)]['Image'].values[0]
+                            cols[col_index].write(skill_name)
+                            cols[col_index].image(img, width=150)
+ 
+            else:
+                col1,col2,col3 = st.columns([1,2,1])
+                col2.error("No Improvements Needed...")    
+        else:
+            st.markdown(f'<p style="text-align: center; font-size: 30px;"><span style="color: green;">Score {sc}%.</span></h1>', unsafe_allow_html=True)
+            st.markdown(
+                f"""
+                <h1 style='text-align: center; font-size: 50px;'>
+                    <span style='color: red;'>The Candiate is not a good match for the Job.</span>
+                </h1>
+                """,
+                unsafe_allow_html=True
+            )
+            # place horizontal line
+            st.markdown(
+                """
+                <hr style='border: 1px solid green;'>
+                """,
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                """
+                <p style='text-align: center; font-size: 30px; font-family: Garamond, sans-serif;'>
+                    <span style='color: purple;'>Improvements</span>
+                </p>
+                """,
+                unsafe_allow_html=True
+            )
+            #parse Job Description and Extract the skills
+            JD = preprocess_text(JD)
+            scored_df = calculate_scores(JD)
+            high_scores_df = scored_df[scored_df['Score'] >= 1]
+            if not high_scores_df.empty:
+                #make a list of skills
+                data = pd.read_csv('image.csv')
+                # Number of columns per row
+                columns_per_row = 3
+                # Count the total number of rows needed
+                total_items = len(high_scores_df)
+                total_rows = -(-total_items // columns_per_row)  # Ceiling division
+
+                for row_index in range(total_rows):
+                    # Create a new row of columns
+                    cols = st.columns(columns_per_row)
+                    
+                    # Iterate through the items in this row
+                    for col_index in range(columns_per_row):
+                        # Calculate the actual index in the dataframe
+                        item_index = row_index * columns_per_row + col_index
+                        
+                        # Check if the index is valid
+                        if item_index < total_items:
+                            # Get the row data
+                            row = high_scores_df.iloc[item_index]
+                            skill_name = row['Domain/Area']
+                            img = data[data['Skill'] == str(skill_name)]['Image'].values[0]
+                            
+                            # Display the skill name and image
+                            cols[col_index].write(skill_name)
+                            cols[col_index].image(img, width=150)
+            else:
+                col1,col2,col3 = st.columns([1,2,1])
+                col2.error("No Improvements Needed...") 
+def interview():
+    st.markdown(
+    """
+    <style>
+    /* Apply background image to the main content area */
+    .main {
+        background-image: url('https://plus.unsplash.com/premium_photo-1672423154405-5fd922c11af2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Y29ycG9yYXRlJTIwYmFja2dyb3VuZHxlbnwwfHwwfHx8MA%3D%3D');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: rgba(255, 255, 255, 0.7); /* Add a semi-transparent overlay */
+        background-blend-mode: overlay; /* Blend the image with the overlay */
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+    )
+    st.markdown(
+    """
+    <h1 style='text-align: center; font-size: 50px;'>
+        <span style='color: green;'>Recruitment Process</span>
+    </h1>
+    """,
+    unsafe_allow_html=True
+    )
+    data=pd.read_csv('company.csv',encoding='latin1')
+    company_names=data['Company'].tolist()
+    #display the company names in alphabetical order
+    company_names.sort()
+    company_name = st.selectbox("Select Company Name",company_names)
+    search_and_display_images(company_name+'comapany',3)
+    # draw horizontal line
+    st.markdown(
+        """
+        <hr style='border: 1px solid green;'>
+        """,
+        unsafe_allow_html=True
+    )
+    try:
+        #About the company which is in Info column
+        info=data[data['Company']==company_name]['Info'].values[0]
+        st.write(info)
+        round1 = data[data['Company'] == company_name]['Round 1'].values[0]
+        round2 = data[data['Company'] == company_name]['Round 2'].values[0]
+        round3 = data[data['Company'] == company_name]['Round 3'].values[0]
+        round4 = data[data['Company'] == company_name]['Round 4'].values[0]
+        round5 = data[data['Company'] == company_name]['Round 5'].values[0]
+        round6 = data[data['Company'] == company_name]['Round 6'].values[0]
+        # Helper function to style headings and text
+        def style_round(round_heading, round_text):
+            # Separate heading from details using ":"
+            heading, details = round_text.split(":", 1)
+            # Style the heading and details
+            styled_heading = f"<span style='font-weight:bold;'>{heading}:</span>"
+            styled_details = f"<span>{details.strip()}</span>"
+            return f"<p style='color:red; font-weight:bold;'>{round_heading}</p><p>{styled_heading} {styled_details}</p>"
+
+        # Display rounds with styled text
+        st.markdown(style_round("Round 1", round1), unsafe_allow_html=True)
+        st.markdown(style_round("Round 2", round2), unsafe_allow_html=True)
+        st.markdown(style_round("Round 3", round3), unsafe_allow_html=True)
+        st.markdown(style_round("Round 4", round4), unsafe_allow_html=True)
+        st.markdown(style_round("Round 5", round5), unsafe_allow_html=True)
+        st.markdown(style_round("Round 6", round6), unsafe_allow_html=True)
+    except:
+        pass
 def user_home_page():
     # Navigation menu for user dashboard
+    if "show_logout_modal" not in st.session_state:
+        st.session_state.show_logout_modal = False
     with st.sidebar:
         selected_tab = option_menu(
             menu_title=None,
-            options=["Student Profile", "Placement Prediction", "Resume Screening",'Logout'],
-            icons=['person-circle','bar-chart','newspaper','unlock-fill'], menu_icon="cast", default_index=0,
+            options=["Student Profile", "Placement Prediction", "Resume Screening",'Candidate Matching','Interview Process','Logout'],
+            icons=['person-circle','bar-chart','newspaper','person-check','info-circle-fill','unlock-fill'], menu_icon="cast", default_index=0,
         styles={
         "nav-link-selected": {"background-color": "skyblue", "color": "black", "border-radius": "5px"},
         }
@@ -515,7 +818,47 @@ def user_home_page():
         placement()
     elif selected_tab == "Resume Screening":
         resume()
+    elif selected_tab == "Candidate Matching":
+        candidate_matching()
+    elif selected_tab == "Interview Process":
+        interview()
     elif selected_tab=='Logout':
-        # Logout functionality
-        st.session_state.clear()  # Clear session state to "log out"
-        st.experimental_rerun()
+        st.markdown(
+        """
+        <style>
+        /* Apply background image to the main content area */
+        .main {
+            background-image: url('https://st2.depositphotos.com/3252397/7026/i/450/depositphotos_70265521-stock-photo-keyboard-logout-black.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: rgba(255, 255, 255, 0.8); /* Add a semi-transparent overlay */
+            background-blend-mode: overlay; /* Blend the image with the overlay */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+        )
+        st.session_state.show_logout_modal = True   
+        if st.session_state.show_logout_modal:
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            st.write("")
+            col1,col2,col3=st.columns([1,4,1])
+            with col2.form(key="logout"):
+                st.error("Are you sure you want to log out?")
+                col1, col2, col3 = st.columns([1, 2, 1])
+
+                with col1:
+                    if st.form_submit_button("Yes, Logout",type='primary'):
+                        st.session_state.clear()
+                        st.experimental_rerun()
+
+                with col3:
+                    if st.form_submit_button("Cancel",type='primary'):
+                        st.session_state.show_logout_modal = False  # Close dialog

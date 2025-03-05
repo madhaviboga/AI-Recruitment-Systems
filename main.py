@@ -4,7 +4,7 @@ from register_page import register_page
 from db_manager import init_db
 from streamlit_option_menu import option_menu
 from home_page import home_page
-
+from about_page import about_page
 # Initialize the database
 init_db()
 
@@ -21,10 +21,18 @@ if "page" not in st.session_state:
 
 if st.session_state["page"] == "Home":
     # Horizontal navigation for non-logged-in users
+    st.markdown(
+        """
+        <div style="text-align: center; color: white;">
+            <h1 style="color: red; font-size: 80px; text-align: center; font-weight: bold; font-family: 'Times New Roman', Times, serif;">AI Recruitment Systems</h1>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     selected_page = option_menu(
         menu_title=None,
-        options=["Home", "Login", "Register"],
-        icons=["house", "box-arrow-in-right", "person-plus"],
+        options=["Home", "Login", "Register",'Forgot Password'],
+        icons=["house", "box-arrow-in-right", "person-plus","key"],
         menu_icon="cast",
         default_index=0,
         orientation="horizontal",
@@ -47,7 +55,8 @@ if st.session_state["page"] == "Home":
         login_page()
     elif selected_page == "Register":
         register_page()
-
+    elif selected_page == "Forgot Password":
+        about_page()
 elif st.session_state["page"] == "user_home":
     # Redirect to the user dashboard after login
     from user_home import user_home_page

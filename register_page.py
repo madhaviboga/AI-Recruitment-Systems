@@ -38,6 +38,7 @@ def register_page():
         year_of_study = col1.selectbox("Year of Study", [1, 2, 3, 4])
         mobile_no = col2.text_input("Mobile Number")
         col1, col2 = st.columns(2)
+        otp=0
         password = col1.text_input("Password", type="password")
         retype_password = col2.text_input("Retype Password", type="password")
 
@@ -54,8 +55,10 @@ def register_page():
                 st.error("Password must be at least 6 characters long!")
             elif password != retype_password:
                 st.error("Passwords do not match!")
+            elif len(mobile_no) != 10:
+                st.error("Invalid Mobile Number!")
             else:
-                if register_user(name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no, password):
+                if register_user(name, email, regd_no, branch, student_type, course, college_name, student_image, year_of_study, mobile_no,otp, password):
                     st.success("Registration Successful!")
                 else:
                     st.error("Email already exists!")

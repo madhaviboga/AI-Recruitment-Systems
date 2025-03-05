@@ -8,7 +8,7 @@ matplotlib==3.7.2
 pdfplumber==0.11.4
 PyPDF2==2.12.1
 beautifulsoup4==4.12.3
-gensim==3.6.0
+gensim
 nltk==3.8.1
 transformers
 torch

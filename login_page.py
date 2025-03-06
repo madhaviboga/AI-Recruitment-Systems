@@ -24,7 +24,7 @@ def send_alert_email(to_email, subject, message, from_email, from_password):
         server.sendmail(from_email, to_email, msg.as_string())
         server.quit()
     except Exception as e:
-        pass
+        st.error('Unable to Send Enail due to Server Issue')
 
 def login_page():
     st.markdown(

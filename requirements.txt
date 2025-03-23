@@ -13,3 +13,9 @@ nltk==3.8.1
 transformers
 torch
 scipy
+fpdf==1.7.2
+google-generativeai==0.8.3
+google-api-python-client==2.48.0
+pdfkit==1.0.0
+youtube-transcript-api==0.6.2
+textblob==0.17.1

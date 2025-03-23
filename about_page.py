@@ -65,8 +65,8 @@ def about_page():
                     to_email=email
                     subject = "OTP for AI Recruiting System"
                     body = f"🤖 Hello,\n\n🔐 Your OTP is {otp}. Please enter this OTP to reset your password.\n\nBest Regards,\n🚀 Team AI Recruitment System"
-                    from_email = 'dont.reply.mail.mail@gmail.com'
-                    from_password = 'ekdbgizfyaiycmkv'  
+                    from_email = 'madhaviboga004@gmail.com'
+                    from_password = 'tgkbbrhwgkfhqxjx'  
                     # Send the alert email
                     send_alert_email(to_email, subject, body, from_email, from_password)
                     update_otp(email, otp)

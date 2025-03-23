@@ -15,6 +15,31 @@ import base64
 import PyPDF2
 import re
 import string
+import requests
+import re
+from fpdf import FPDF
+import google.generativeai as genai
+from datetime import datetime
+import random
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+import os
+import pdfplumber
+import requests
+import os
+import googleapiclient.discovery
+from googleapiclient.discovery import build
+import pandas as pd
+from datetime import timedelta
+from datetime import datetime
+import pdfkit
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import TextFormatter
+import requests
+import re
+from textblob import TextBlob
+from db_manager import valid_user,edit_profile,fetch_user
+import numpy as np
 # Function to extract text from PDF
 def extract_text_from_pdf(pdf_file):
     reader = PyPDF2.PdfFileReader(pdf_file)
@@ -25,6 +50,7 @@ def extract_text_from_pdf(pdf_file):
         content += page.extractText()
     return content
 #load the model
+
 # Function to preprocess text
 def preprocess_text(content):
     content = content.lower()
@@ -167,7 +193,7 @@ def user_profile():
     )
     # Extracting user data from session state after successful login
     user_data = st.session_state.get('user', None)
-    
+    user_data=fetch_user(user_data[2])
     if user_data:
         # Assuming 'user' is a tuple (id, name, email, password, regd_no, year_of_study, branch, student_type, student_image)
         name=user_data[1]
@@ -801,13 +827,14 @@ def interview():
         pass
 def user_home_page():
     # Navigation menu for user dashboard
+
     if "show_logout_modal" not in st.session_state:
         st.session_state.show_logout_modal = False
     with st.sidebar:
         selected_tab = option_menu(
             menu_title=None,
-            options=["Student Profile", "Placement Prediction", "Resume Screening",'Candidate Matching','Interview Process','Logout'],
-            icons=['person-circle','bar-chart','newspaper','person-check','info-circle-fill','unlock-fill'], menu_icon="cast", default_index=0,
+            options=["Student Profile", "Placement Prediction", "Resume Screening",'Candidate Matching','Interview Process','Course Recommendations','Interview Preparation','Summarization','Edit Profile','Logout'],
+            icons=['person-circle','bar-chart','newspaper','person-check','info-circle-fill','youtube','question-circle','ui-checks','pen','unlock-fill'], menu_icon="cast", default_index=0,
         styles={
         "nav-link-selected": {"background-color": "skyblue", "color": "black", "border-radius": "5px"},
         }
@@ -862,3 +889,410 @@ def user_home_page():
                 with col3:
                     if st.form_submit_button("Cancel",type='primary'):
                         st.session_state.show_logout_modal = False  # Close dialog
+    elif selected_tab == "Course Recommendations":
+        st.markdown('<h1 style="text-align: center; color: green;">Course Recommendation System</h1>', unsafe_allow_html=True)
+        st.write('')
+        try:
+            col1,col2,col3=st.columns([1,4,1])
+            selected_plan = col2.text_input("Enter the course you want to search for")
+            
+            if selected_plan == "":
+                col1,col2,col3=st.columns([1,1,1])
+                col2.image('https://i.gifer.com/fyFl.gif',width=300)
+            else:
+                id = selected_plan +'full course'
+                start_time = datetime(year=2020, month=1, day=1).strftime('%Y-%m-%dT%H:%M:%SZ')
+                end_time = datetime(year=2025, month=2, day=8).strftime('%Y-%m-%dT%H:%M:%SZ')
+                def rankFinder(comment):
+                    list_1 = []
+                    for ele in comment:
+                        t=TextBlob(ele)
+                        list_1.append(t.sentiment.polarity)
+                        if len(list_1)>0:
+                            return abs(sum(list_1)/len(list_1))
+                        else:
+                            pass
+                s=[]
+                ids=[]
+                ind=[]
+                api_key="AIzaSyBhLe5p8LPhBL35V-RJci5DRq2QhwgsUIg"
+                youtube=build('youtube','v3',developerKey=api_key)
+                results = youtube.search().list(q=id, part="snippet", type="video", order="viewCount",publishedAfter=start_time,
+                                            publishedBefore=end_time, maxResults=10).execute()
+                for item in sorted(results['items'], key=lambda x:x['snippet']['publishedAt']):
+                    coll = item['snippet']['title'], item['id']['videoId']
+                    df_1 = pd.DataFrame(coll)
+                    for i in range(len(df_1)):
+                        s.append(df_1.iloc[i,0])
+                for j in range(0,len(s),2):
+                    ind.append(s[j])
+                for i in range(1,len(s),2):
+                    ids.append(s[i])
+                for it in range(0,len(ids)):
+                    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+                    api_service_name = "youtube"
+                    api_version = "v3"
+                    youtube = googleapiclient.discovery.build(
+                    api_service_name, api_version, developerKey = api_key)
+                    request = youtube.commentThreads().list(
+                        part="id,snippet",
+                        maxResults=100,
+                        order="relevance",
+                        videoId= ids[it]
+                    )
+                    response = request.execute()
+                    authorname = []
+                    comments = []
+                    positive = []
+                    negative = []
+                    for i in range(len(response["items"])):
+                        authorname.append(response["items"][i]["snippet"]["topLevelComment"]["snippet"]["authorDisplayName"])
+                        comments.append(response["items"][i]["snippet"]["topLevelComment"]["snippet"]["textOriginal"])
+                        df_1 = pd.DataFrame(comments, index = authorname,columns=["Comments"])
+                    for i in range(len(df_1)):
+                        text =  TextBlob(df_1.iloc[i,0])
+                        polarity = text.sentiment.polarity
+                        if polarity>0:
+                            positive.append(df_1.iloc[i,0])
+                        elif polarity<0:
+                            negative.append(df_1.iloc[i,0])
+                        else:
+                            pass
+                    inh="https://www.youtube.com/watch?v="
+                    inh+=ids[it]
+                    if len(negative)==0:
+                        rank_1 = rankFinder(positive)
+                        inten_1=rank_1*len(positive)
+                        neg_int=0
+                        pos_int= 1/(1 + np.exp(-inten_1))
+                        if pos_int>=0.95:
+                            st.markdown(f"<h3 style='color: green;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐⭐⭐⭐")
+                            st.video(str(inh))
+                        if pos_int>0.75 and pos_int<0.95:
+                            st.markdown(f"<h3 style='color: green;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐⭐⭐✰")
+                            st.video(str(inh))
+                        if pos_int>0.50 and pos_int<0.75:
+                            st.markdown(f"<h3 style='color: orange;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐⭐✰✰")
+                            st.video(str(inh))
+                        if pos_int>0.30 and pos_int<0.50:
+                            st.markdown(f"<h3 style='color: red;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐✰✰✰")
+                            st.video(str(inh))
+                        if pos_int<0.30:
+                            st.markdown(f"<h3 style='color: red;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐✰✰✰✰")
+                            st.video(str(inh))
+                    if len(negative)>0:
+                        rank_1 = rankFinder(positive)
+                        inten_1=rank_1*len(positive)
+                        rank_2=rankFinder(negative)
+                        inten_2=rank_2*len(negative)
+                        pos_int=inten_1/(inten_1+inten_2)
+                        neg_int=inten_2/(inten_1+inten_2)
+                        if pos_int>=0.95:
+                            st.markdown(f"<h3 style='color: green;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐⭐⭐⭐")
+                            st.video(str(inh))
+                        if pos_int>0.75 and pos_int<0.95:
+                            st.markdown(f"<h3 style='color: green;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐⭐⭐✰")
+                            st.video(str(inh))
+                        if pos_int>0.50 and pos_int<0.75:
+                            st.markdown(f"<h3 style='color: orange;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐⭐✰✰")
+                            st.video(str(inh))
+                        if pos_int>0.30 and pos_int<0.50:
+                            st.markdown(f"<h3 style='color: red;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐⭐✰✰✰")
+                            st.video(str(inh))
+                        if pos_int<0.30:
+                            st.markdown(f"<h3 style='color: red;'>{ind[it]}</h3>", unsafe_allow_html=True)
+                            st.write(inh)
+                            st.write("⭐✰✰✰✰")
+                            st.video(str(inh))
+                    st.markdown(f"<hr/>",unsafe_allow_html=True)
+        except Exception as e:
+            st.image('https://img.freepik.com/free-vector/removing-goods-from-basket-refusing-purchase-changing-decision-item-deletion-emptying-trash-online-shopping-app-laptop-user-cartoon-character-vector-isolated-concept-metaphor-illustration_335657-2843.jpg?semt=ais_hybrid',use_column_width=True)
+    elif selected_tab == "Interview Preparation":
+        st.markdown(
+        """
+        <h1 style='text-align: center; font-size: 50px;'>
+            <span style='color: #a39407;'>Mock Interview Questionnaaire</span>
+        </h1>
+        """,
+        unsafe_allow_html=True
+        )
+        st.write('')
+        #place slider for Easy, Medium, Hard levels
+        col1,col2=st.columns(2)
+        level = col2.select_slider(
+        "Choose the level of difficulty", 
+        options=["Easy", "Medium", "Hard"]
+        )
+        data=pd.read_csv('Software Questions.csv',encoding='latin1')
+        #filter the questions based on the level
+        questions = data[data['Difficulty']==level]['Question'].tolist()
+        answers = data[data['Difficulty']==level]['Answer'].tolist()
+        category = data[data['Difficulty']==level]['Category'].tolist()
+        # apply the select box to select the category
+        category = list(set(category))
+        category.sort()
+        category = col1.selectbox("Select Category",category)
+        col1,col2,col3=st.columns([2,2,1])
+        button=col2.button("Get Questions",type='primary')
+        st.write('')
+        st.write('')
+        if button:
+            #filter the questions based on the category
+            #apply cosine similarity to get the questions on data
+            #apply tfidf vectorizer to convert the text data into numerical data
+            tfidf = TfidfVectorizer()
+            tfidf_matrix = tfidf.fit_transform(questions)
+            #calculate the cosine similarity
+            # Convert the sparse matrix to a dense matrix
+            # Calculate the cosine similarity
+            similarity=cosine_similarity(tfidf_matrix,tfidf_matrix) 
+            # Get the index of the question
+            question = random.randint(0, len(questions)-1)
+            questions = data[(data['Difficulty']==level) & (data['Category']==category)]['Question'].tolist()
+            answers = data[(data['Difficulty']==level) & (data['Category']==category)]['Answer'].tolist()
+            #display the questions with answers
+            for i in range(len(questions)):
+                # Display the question in bold and red
+                st.markdown(
+                    f"<b style='color: red;'>Q{i+1}.</b> <span style='color: red;'>{questions[i]}</span>",
+                    unsafe_allow_html=True
+                )
+                # Display the answer in bold and black
+                st.markdown(
+                    f"<b>Ans:</b> {answers[i]}",
+                    unsafe_allow_html=True
+                )
+                # Add a horizontal green line
+                st.markdown(
+                    """
+                    <hr style='border: 1px solid green;'>
+                    """,
+                    unsafe_allow_html=True
+                )
+    elif selected_tab == "Edit Profile":
+        st.markdown('<h1 style="text-align: center; color: green;">Modify Profile</h1>', unsafe_allow_html=True)
+        st.markdown(
+        """
+        <style>
+        /* Apply background image to the main content area */
+        .main {
+            background-image: url('https://marketplace.canva.com/EAGLLHxre4I/1/0/1600w/canva-blue-and-white-simple-background-instagram-post-3d4P_yzNBoA.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: rgba(255, 255, 255, 0.2); /* Add a semi-transparent overlay */
+            background-blend-mode: overlay; /* Blend the image with the overlay */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+        )
+        user_data = st.session_state.get('user', None)
+        user_data=fetch_user(user_data[2])
+        col1,col2,col3=st.columns([1,3,1])
+        name=col2.text_input('Modify Name Here!',value=user_data[1])
+        regd_no=col2.text_input('Modify Registration Number Here!!',value=user_data[3])
+        year_of_study = col2.selectbox("Year of Study", [1, 2, 3, 4])
+        mobile_no = col2.text_input("Mobile Number", value=user_data[10])
+        #if values are not entered then fetch the past values
+        if name == "":
+            name = user_data[1]
+        if regd_no == "":
+            regd_no = user_data[3]
+        if mobile_no == "":
+            mobile_no = user_data[10]
+        #update the values
+        col1,col2,col3=st.columns([2,2,1])
+        button=col2.button("Update Profile",type='primary')
+        if button:
+            edit_profile(name,user_data[2],regd_no,year_of_study,mobile_no)
+            col2.success("Profile Updated Successfully!!")
+    elif selected_tab == "Summarization":
+        st.markdown(
+        """
+        <h4 style='text-align: center; font-size: 40px;'>
+            <span style='color: green;'>YouTube Transcript & AI Analysis 📄✨</span>
+        </h4>
+        """,
+        unsafe_allow_html=True
+        )
+        # Configure Gemini API
+        api_key = "AIzaSyCEHqEUnURAuH54Tng8IjlWSR6LyzzEpCI"
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash-latest")
+
+        # Function to extract video ID from YouTube URL
+        def get_video_id(youtube_url):
+            pattern = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})'
+            match = re.search(pattern, youtube_url)
+            return match.group(1) if match else None
+
+        # Function to get YouTube video title
+        def get_video_title(video_id):
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            try:
+                response = requests.get(url)
+                response.raise_for_status()
+                matches = re.findall(r'<title>(.*?)</title>', response.text)
+                return matches[0].replace(" - YouTube", "") if matches else "Unknown"
+            except requests.RequestException as e:
+                st.error(f"Error fetching video title: {e}")
+                return "Unknown"
+
+        # Function to get YouTube transcript
+        def download_transcript(video_id):
+            try:
+                transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+                transcript = transcript_list.find_generated_transcript(['en'])
+                formatter = TextFormatter()
+                return formatter.format_transcript(transcript.fetch())
+            except Exception as e:
+                return ""
+
+        # Function to get AI-generated content using Gemini API
+        def get_gemini_response(prompt):
+            response = model.generate_content([prompt, ""])
+            return response.text if response else "No response generated."
+        def sanitize_filename(filename):
+            """Removes invalid characters from filenames for compatibility."""
+            return re.sub(r'[\\/*?:"<>|]', '', filename)  # Remove invalid characters
+        # Function to generate a PDF
+        def generate_pdf(video_title, transcript_text, agenda, summary, qna_pairs):
+            pdf = FPDF()
+            pdf.set_auto_page_break(auto=True, margin=15)
+            pdf.add_page()
+            pdf.set_font("Arial", style='B', size=16)
+
+            # Center-align the title with line wrapping
+            pdf.set_xy(10, 10)  # Set position
+            pdf.multi_cell(0, 10, video_title, align='C')  # Wrap long title
+
+            # Add a line break
+            pdf.ln(10)
+
+            # Date, Time, and User Info
+            from datetime import datetime
+            now = datetime.now()
+            date_str = now.strftime("%Y-%m-%d")
+            time_str = now.strftime("%H:%M:%S")
+
+            pdf.set_font("Arial", size=12)
+            pdf.cell(0, 10, f"Date: {date_str}", ln=False, align='L')
+            pdf.cell(0, 10, f"Time: {time_str}", ln=True, align='R')
+
+            pdf.ln(10)
+
+            # Add Agenda
+            pdf.set_font("Arial", style='B', size=14)
+            pdf.cell(0, 10, "Agenda:", ln=True)
+            pdf.set_font("Arial", size=12)
+            pdf.multi_cell(0, 8, agenda)
+
+            pdf.ln(5)
+
+            # Add Summary
+            pdf.set_font("Arial", style='B', size=14)
+            pdf.cell(0, 10, "Summary:", ln=True)
+            pdf.set_font("Arial", size=12)
+            pdf.multi_cell(0, 8, summary)
+
+            pdf.ln(5)
+
+            # Add Interview Questions
+            pdf.set_font("Arial", style='B', size=14)
+            pdf.cell(0, 10, "Interview Questions & Answers:", ln=True)
+
+            pdf.set_font("Arial", size=12)
+            #remove all * from the qna_pairs
+            qna_pairs = qna_pairs.replace("*","")
+            pdf.multi_cell(0, 8, qna_pairs)
+
+            # Save PDF
+            pdf_filename = sanitize_filename(video_title) + ".pdf"
+            pdf.output(pdf_filename)
+            return pdf_filename
+
+
+        # Streamlit UI
+        col1,col2,col3=st.columns([1,4,1])
+        youtube_url = col2.text_input("Enter YouTube Video Link:")
+        col1,col2,col3=st.columns([2,2,1])
+        button=col2.button("Report",type='primary')
+        if button:
+            if youtube_url:
+                video_id = get_video_id(youtube_url)
+                if video_id:
+                    try:
+                        video_title = get_video_title(video_id)
+                        transcript_text = download_transcript(video_id)
+                        if transcript_text:
+                            # Generate Agenda, Summary, and Q&A
+                            agenda_prompt = f"Generate a 1-sentence agenda for this transcript:\n{transcript_text}"
+                            summary_prompt = f"Summarize the transcript into 2 brief paragraphs:\n{transcript_text}"
+                            prompt = f"Based on the following transcript, generate 10 interview questions and their detailed answers:\n\n{transcript_text}\n\nFormat:\nQuestion 1)\nAnswer:\n...\nQuestion 10)\nAnswer:"
+                            response = model.generate_content([prompt])
+                            qna_text = response.text if response.text else "Answer not generated."
+
+
+                            agenda = get_gemini_response(agenda_prompt)
+                            summary = get_gemini_response(summary_prompt)
+
+
+                            # Process Q&A into dictionary format
+                            # Process Q&A into dictionary format
+                            qna_pairs = {}
+                            qna_lines = qna_text.split("\n")
+                            current_question = None  # Initialize to None
+
+                            for line in qna_lines:
+                                if re.match(r"^\d+\)", line.strip()):  # Detect question format like "1) ..."
+                                    current_question = line.strip()
+                                    qna_pairs[current_question] = ""  # Initialize empty answer
+                                elif current_question:  # If there's an active question, append the answer
+                                    qna_pairs[current_question] += f"{line.strip()} "
+
+                            # Ensure there are at least 10 questions, else fill with dummy data
+                            while len(qna_pairs) < 10:
+                                qna_pairs[f"Question {len(qna_pairs) + 1})"] = "Answer not generated."
+
+                            # Remove any empty keys safely
+                            qna_pairs = {k: v.strip() for k, v in qna_pairs.items() if k}
+                            pdf_filename = generate_pdf(video_title, transcript_text, agenda, summary, qna_text)
+
+                            with open(pdf_filename, "rb") as pdf_file:
+                                st.download_button(label="📥 Download PDF", data=pdf_file, file_name=pdf_filename, mime="application/pdf")
+
+                            
+                            # Display results
+                            st.subheader("Agenda")
+                            st.write(agenda)
+
+                            st.subheader("Summary")
+                            st.write(summary)
+
+                            st.subheader("Interview Q&A")
+                            st.write(qna_text)
+
+                            # Generate and Download PDF
+                        else:
+                            st.image('https://cdni.iconscout.com/illustration/premium/thumb/employee-is-unable-to-find-sensitive-data-illustration-download-in-svg-png-gif-file-formats--no-found-misplaced-files-business-pack-illustrations-8062128.png?f=webp',use_column_width=True,caption='No Transcript Found')
+                    except:
+                        st.error("Failed to process video transcript.")

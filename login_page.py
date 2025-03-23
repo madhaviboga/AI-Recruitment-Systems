@@ -24,7 +24,7 @@ def send_alert_email(to_email, subject, message, from_email, from_password):
         server.sendmail(from_email, to_email, msg.as_string())
         server.quit()
     except Exception as e:
-        st.error('Unable to Send Enail due to Server Issue')
+        pass
 
 def login_page():
     st.markdown(
@@ -67,8 +67,8 @@ def login_page():
                         to_email=email
                         subject = "OTP for AI Recruiting System"
                         body = f"🤖 Hello,\n\n🔐 Your OTP is {otp}. Please enter this OTP to login.\n\nBest Regards,\n🚀 Team AI Recruitment System"
-                        from_email = 'dont.reply.mail.mail@gmail.com'
-                        from_password = 'ekdbgizfyaiycmkv'  
+                        from_email = 'madhaviboga004@gmail.com'
+                        from_password = 'tgkbbrhwgkfhqxjx'  
                         # Send the alert email
                         send_alert_email(to_email, subject, body, from_email, from_password)
                         update_otp(email, otp)
@@ -87,7 +87,7 @@ def login_page():
                 submit_button = col2.form_submit_button("Submit", type='primary')
                 if submit_button and otp_input:
                     stored_otp = fetch_otp(st.session_state["email"])[0]
-                    if otp_input:
+                    if int(otp_input) == int(stored_otp):
                         st.success("Login Successful!")
                         st.session_state["otp_verified"] = True
                         st.session_state["page"] = "user_home"

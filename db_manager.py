@@ -92,3 +92,18 @@ def fetch_password(email):
     password = cursor.fetchone()
     conn.close()
     return password
+
+def edit_profile(name, email, regd_no, year_of_study, mobile_no):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET name = ?, regd_no = ?, year_of_study = ?, mobile_no = ? WHERE email = ?", (name, regd_no, year_of_study, mobile_no, email))
+    conn.commit()
+    conn.close()
+
+def fetch_user(email):
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    conn.close()
+    return user

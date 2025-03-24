@@ -1250,6 +1250,8 @@ def user_home_page():
                     try:
                         video_title = get_video_title(video_id)
                         transcript_text = download_transcript(video_id)
+                        transcript_text = transcript_text.replace("—", "-")  # Replace Unicode dash with ASCII dash
+
                         if transcript_text:
                             # Generate Agenda, Summary, and Q&A
                             agenda_prompt = f"Generate a 1-sentence agenda for this transcript:\n{transcript_text}"

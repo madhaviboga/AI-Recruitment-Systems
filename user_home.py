@@ -1294,5 +1294,6 @@ def user_home_page():
                             # Generate and Download PDF
                         else:
                             st.image('https://cdni.iconscout.com/illustration/premium/thumb/employee-is-unable-to-find-sensitive-data-illustration-download-in-svg-png-gif-file-formats--no-found-misplaced-files-business-pack-illustrations-8062128.png?f=webp',use_column_width=True,caption='No Transcript Found')
-                    except:
+                    except Exception as e:
+                        st.write(e)
                         st.error("Failed to process video transcript.")

@@ -1239,7 +1239,6 @@ def user_home_page():
         if button:
             if youtube_url:
                 video_id = get_video_id(youtube_url)
-                print(video_id)
                 if video_id:
                     try:
                         video_title = get_video_title(video_id)

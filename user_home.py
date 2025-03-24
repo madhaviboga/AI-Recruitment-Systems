@@ -1180,6 +1180,7 @@ def user_home_page():
             pdf.set_auto_page_break(auto=True, margin=15)
             pdf.add_page()
             pdf.set_font("Arial", style='B', size=16)
+            pdf.multi_cell(0, 8, transcript_text.encode('latin-1', 'replace').decode('latin-1'))
 
             # Center-align the title with line wrapping
             pdf.set_xy(10, 10)  # Set position
@@ -1195,6 +1196,8 @@ def user_home_page():
             time_str = now.strftime("%H:%M:%S")
 
             pdf.set_font("Arial", size=12)
+            pdf.multi_cell(0, 8, transcript_text.encode('latin-1', 'replace').decode('latin-1'))
+
             pdf.cell(0, 10, f"Date: {date_str}", ln=False, align='L')
             pdf.cell(0, 10, f"Time: {time_str}", ln=True, align='R')
 
@@ -1202,6 +1205,7 @@ def user_home_page():
 
             # Add Agenda
             pdf.set_font("Arial", style='B', size=14)
+            pdf.multi_cell(0, 8, transcript_text.encode('latin-1', 'replace').decode('latin-1'))
             pdf.cell(0, 10, "Agenda:", ln=True)
             pdf.set_font("Arial", size=12)
             pdf.multi_cell(0, 8, agenda)
@@ -1210,6 +1214,7 @@ def user_home_page():
 
             # Add Summary
             pdf.set_font("Arial", style='B', size=14)
+            pdf.multi_cell(0, 8, transcript_text.encode('latin-1', 'replace').decode('latin-1'))
             pdf.cell(0, 10, "Summary:", ln=True)
             pdf.set_font("Arial", size=12)
             pdf.multi_cell(0, 8, summary)
@@ -1218,9 +1223,11 @@ def user_home_page():
 
             # Add Interview Questions
             pdf.set_font("Arial", style='B', size=14)
+            pdf.multi_cell(0, 8, transcript_text.encode('latin-1', 'replace').decode('latin-1'))
             pdf.cell(0, 10, "Interview Questions & Answers:", ln=True)
 
             pdf.set_font("Arial", size=12)
+            pdf.multi_cell(0, 8, transcript_text.encode('latin-1', 'replace').decode('latin-1'))
             #remove all * from the qna_pairs
             qna_pairs = qna_pairs.replace("*","")
             pdf.multi_cell(0, 8, qna_pairs)
